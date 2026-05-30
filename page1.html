@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Script Segmentation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 32px;
+      color: #202124;
+      background: #f7f7f4;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .top-menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .top-menu a {
+      border: 1px solid #c9c9c3;
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: #202124;
+      background: #fff;
+      text-decoration: none;
+      font-weight: 650;
+    }
+
+    .top-menu a[aria-current="page"] {
+      border-color: #1f5f52;
+      color: #1f5f52;
+      background: #e8f2ef;
+    }
+
+    textarea, pre {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #c9c9c3;
+      border-radius: 6px;
+      padding: 14px;
+      font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 240px;
+      resize: vertical;
+    }
+
+    pre {
+      min-height: 240px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      margin: 16px 10px 16px 0;
+      padding: 10px 14px;
+      border: 1px solid #1f5f52;
+      border-radius: 6px;
+      color: #fff;
+      background: #1f5f52;
+      cursor: pointer;
+      font-weight: 650;
+    }
+
+    button.secondary {
+      color: #1f5f52;
+      background: #fff;
+    }
+
+    .meta {
+      color: #5d635f;
+      min-height: 22px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top-menu" aria-label="Main menu">
+      <a href="index.html">Home</a>
+      <a aria-current="page" href="page1.html">Generate JSON</a>
+      <a href="page2.html">Download Video</a>
+    </nav>
+
+    <h1>Script Segmentation</h1>
+    <p>Paste a full script. This page deterministically groups every 25 words into 10-second segments, then wraps the result in a semantic-analyzer prompt.</p>
+
+    <label for="scriptInput">Full script</label>
+    <textarea id="scriptInput" placeholder="Paste script text here..."></textarea>
+
+    <div>
+      <button id="segmentButton" type="button">Generate Segments</button>
+      <button id="copyButton" class="secondary" type="button">Copy Prompt</button>
+    </div>
+
+    <p id="meta" class="meta"></p>
+
+    <label for="segmentOutput">Prompt Output</label>
+    <pre id="segmentOutput" aria-live="polite">[]</pre>
+  </main>
+
+  <script>
+    const WORDS_PER_SEGMENT = 25;
+    const SECONDS_PER_SEGMENT = 10;
+
+    const scriptInput = document.getElementById('scriptInput');
+    const segmentOutput = document.getElementById('segmentOutput');
+    const segmentButton = document.getElementById('segmentButton');
+    const copyButton = document.getElementById('copyButton');
+    const meta = document.getElementById('meta');
+
+    function splitWords(text) {
+      return text.trim().split(/\s+/).filter(Boolean);
+    }
+
+    function createSegments(text) {
+      const words = splitWords(text);
+      const segments = [];
+
+      for (let index = 0; index < words.length; index += WORDS_PER_SEGMENT) {
+        const segmentIndex = segments.length;
+        segments.push({
+          start: segmentIndex * SECONDS_PER_SEGMENT,
+          end: (segmentIndex + 1) * SECONDS_PER_SEGMENT,
+          text: words.slice(index, index + WORDS_PER_SEGMENT).join(' ')
+        });
+      }
+
+      return segments;
+    }
+
+    function createSemanticPrompt(segments) {
+      const segmentsJson = JSON.stringify(segments, null, 2);
+
+      return `You are a semantic analyzer.
+
+INPUT:
+A JSON array of objects:
+
+${segmentsJson}
+
+TASK:
+For EACH object:
+
+* Analyze the meaning of "text"
+* Extract the MAIN VISUAL IDEA
+* Convert it into a SHORT search query (1 to 3 words ONLY)
+
+OUTPUT:
+Return a JSON array with the SAME structure but replace "text" with "query":
+
+[
+  {
+    "start": number,
+    "end": number,
+    "query": "..."
+  }
+]
+
+=====================================
+STRICT RULES
+============
+
+1. Query length:
+
+* MUST be 1 to 3 words ONLY
+* NO sentences
+
+2. Language:
+
+* Use ENGLISH ONLY (for better stock video results)
+
+3. Content:
+
+* Focus on VISUAL concepts (what can be filmed)
+* Prefer:
+
+  * objects (city, office, park)
+  * people/actions (meeting, talking, working)
+  * environments (urban, nature, business)
+
+4. REMOVE:
+
+* names (Fatima, Montreal, etc.)
+* abstract words (importance, capacity, integration)
+* exam/test vocabulary (task, examiner, candidate)
+
+5. PRIORITY:
+
+* What would appear in a video visually
+
+6. If unclear:
+
+* Use a GENERIC fallback:
+  "people talking"
+
+7. DO NOT:
+
+* Add explanations
+* Add extra fields
+* Modify start/end values
+
+=====================================
+EXAMPLES
+========
+
+Text:
+"I work in an urban planning office in Montreal"
+
+→ "office work"
+
+Text:
+"I lived in France for 10 years"
+
+→ "city life"
+
+Text:
+"We are having a conversation"
+
+→ "people talking"
+
+=====================================
+IMPORTANT
+=========
+
+* Output VALID JSON ONLY
+* No comments
+* No extra text`;
+    }
+
+    function renderSegments() {
+      const segments = createSegments(scriptInput.value);
+      segmentOutput.textContent = createSemanticPrompt(segments);
+      meta.textContent = `${segments.length} segment${segments.length === 1 ? '' : 's'} generated inside the prompt.`;
+    }
+
+    async function copySegments() {
+      await navigator.clipboard.writeText(segmentOutput.textContent);
+      meta.textContent = 'Prompt copied.';
+    }
+
+    segmentButton.addEventListener('click', renderSegments);
+    copyButton.addEventListener('click', copySegments);
+    scriptInput.addEventListener('input', renderSegments);
+  </script>
+</body>
+</html>

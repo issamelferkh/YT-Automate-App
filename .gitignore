@@ -1,0 +1,20 @@
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Runtime cache and downloaded/generated videos
+cache/
+videos/
+
+# Large/generated media files
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv
+*.webm
+*.tmp
+
+# Local environment files
+.env
+.env.*

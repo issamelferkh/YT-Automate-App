@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Video Script Toolkit</title>
+  <style>
+    :root {
+      --bg: #f5f7f2;
+      --panel: #ffffff;
+      --ink: #1f2522;
+      --muted: #66706a;
+      --line: #d8ddd4;
+      --green: #1f5f52;
+      --green-dark: #17483e;
+      --green-soft: #e7f2ee;
+      --gold: #b7791f;
+      --shadow: 0 20px 60px rgba(31, 37, 34, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    main {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    nav a,
+    .tool-link {
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      padding: 0 14px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    nav a {
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    nav a:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .hero-copy,
+    .workflow-panel,
+    .tool-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      padding: clamp(26px, 5vw, 52px);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(2.2rem, 5vw, 5rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 680px;
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 1.08rem;
+      line-height: 1.65;
+    }
+
+    .primary-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tool-link {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .tool-link:hover {
+      background: var(--green-dark);
+    }
+
+    .tool-link.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .tool-link.secondary:hover {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .workflow-panel {
+      position: relative;
+      overflow: hidden;
+      padding: 26px;
+      min-height: 420px;
+    }
+
+    .flow-visual {
+      display: grid;
+      gap: 14px;
+    }
+
+    .flow-item {
+      position: relative;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+    }
+
+    .flow-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .flow-item span {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .flow-code {
+      margin: 20px 0 0;
+      border-radius: 8px;
+      padding: 16px;
+      background: #111715;
+      color: #dff8ef;
+      font: 0.86rem/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      overflow: hidden;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .tool-card {
+      padding: 22px;
+    }
+
+    .tool-card h2 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+    }
+
+    .tool-card p {
+      min-height: 52px;
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .badge.gold {
+      background: #fff4dd;
+      color: var(--gold);
+    }
+
+    @media (max-width: 860px) {
+      main {
+        padding: 20px;
+      }
+
+      .topbar,
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .tool-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <div class="brand">Video Script Toolkit</div>
+      <nav aria-label="Main menu">
+        <a href="index.html">Home</a>
+        <a href="page1.html">Generate JSON</a>
+        <a href="page2.html">Download Video</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Local video workflow</p>
+        <h1>Turn scripts into ordered stock video plans.</h1>
+        <p class="lede">Use the first page to generate clean 10-second JSON segments, then use the second page to download matching Pexels videos in sequence.</p>
+        <div class="primary-actions">
+          <a class="tool-link" href="page1.html">Generate JSON</a>
+          <a class="tool-link secondary" href="page2.html">Download Video</a>
+        </div>
+      </div>
+
+      <aside class="workflow-panel" aria-label="Workflow preview">
+        <div class="flow-visual">
+          <div class="flow-item">
+            <strong>1. Paste script text</strong>
+            <span>Deterministic 10-second segment JSON.</span>
+          </div>
+          <div class="flow-item">
+            <strong>2. Add search queries</strong>
+            <span>Manual query fields keep the video search predictable.</span>
+          </div>
+          <div class="flow-item">
+            <strong>3. Download clips</strong>
+            <span>Videos save locally as ordered segment files.</span>
+          </div>
+        </div>
+        <pre class="flow-code">[
+  {
+    "start": 0,
+    "end": 10,
+    "query": "business background",
+    "video": "videos/segment_1.mp4"
+  }
+]</pre>
+      </aside>
+    </section>
+
+    <section class="tool-grid" aria-label="Tools">
+      <article class="tool-card">
+        <span class="badge">Page 1</span>
+        <h2>Generate JSON</h2>
+        <p>Paste a full script and output clean segment JSON with start, end, and text fields.</p>
+        <a class="tool-link" href="page1.html">Open Generator</a>
+      </article>
+
+      <article class="tool-card">
+        <span class="badge gold">Page 2</span>
+        <h2>Download Video</h2>
+        <p>Paste query JSON and automatically download ordered landscape videos from Pexels.</p>
+        <a class="tool-link" href="page2.html">Open Downloader</a>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
