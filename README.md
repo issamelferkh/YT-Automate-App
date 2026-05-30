@@ -77,8 +77,8 @@ As soon as valid JSON is detected, the page processes segments sequentially, sea
 
 `page3.html` is built for long French narration. It defaults to:
 
-- Voice: `Sulafat`
-- Tempo: slow, warm and natural
+- Voice: `Aoede`
+- Tempo: natural conversation
 - Temperature: natural
 - Chunk length: 170 words
 

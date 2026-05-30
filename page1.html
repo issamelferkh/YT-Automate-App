@@ -174,7 +174,7 @@ STRICT RULES
 
 1. Query length:
 
-* MUST be 1 to 3 words ONLY
+* MUST be 1 to 3 words ONLY, and should be good enough to keep useful context
 * NO sentences
 
 2. Language:
@@ -192,7 +192,8 @@ STRICT RULES
 
 4. REMOVE:
 
-* names (Fatima, Montreal, etc.)
+* person names (Fatima, Ali, etc.)
+* Keep city and country names (Montreal, Paris, France, Canada, etc.) to preserve geographical context
 * abstract words (importance, capacity, integration)
 * exam/test vocabulary (task, examiner, candidate)
 
@@ -207,6 +208,7 @@ STRICT RULES
 
 7. DO NOT:
 
+* Generate duplicate queries for different segments. Each JSON object should have a UNIQUE query.
 * Add explanations
 * Add extra fields
 * Modify start/end values
