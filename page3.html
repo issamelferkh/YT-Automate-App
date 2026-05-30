@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>French Voice Generator</title>
+  <style>
+    :root {
+      --bg: #f6f8f5;
+      --panel: #ffffff;
+      --ink: #202124;
+      --muted: #5d635f;
+      --line: #c9c9c3;
+      --line-soft: #dde1da;
+      --green: #1f5f52;
+      --green-dark: #17483e;
+      --green-soft: #e8f2ef;
+      --red: #a4262c;
+      --amber: #805300;
+      --amber-soft: #fff4dd;
+      --shadow: 0 18px 44px rgba(32, 33, 36, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .top-menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .top-menu a {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: #fff;
+      text-decoration: none;
+      font-weight: 650;
+    }
+
+    .top-menu a[aria-current="page"] {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 780px;
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .input-panel {
+      padding: 20px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+    }
+
+    input,
+    select {
+      min-height: 42px;
+      padding: 0 11px;
+    }
+
+    textarea {
+      min-height: 360px;
+      padding: 14px;
+      resize: vertical;
+      font: 15px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button,
+    .download-link {
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      padding: 0 14px;
+      color: #fff;
+      background: var(--green);
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    button:hover,
+    .download-link:hover {
+      background: var(--green-dark);
+    }
+
+    button:disabled {
+      border-color: var(--line);
+      color: #8b918d;
+      background: #eef1ec;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      color: var(--green);
+      background: #fff;
+    }
+
+    button.secondary:hover:not(:disabled) {
+      background: var(--green-soft);
+    }
+
+    button.secondary:disabled {
+      border-color: var(--line);
+      color: #8b918d;
+      background: #eef1ec;
+      cursor: not-allowed;
+    }
+
+    .message {
+      min-height: 24px;
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    .message.error {
+      color: var(--red);
+    }
+
+    .side-panel {
+      padding: 18px;
+    }
+
+    .side-panel h2 {
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+    }
+
+    .result-panel {
+      margin-bottom: 18px;
+    }
+
+    .result-panel[hidden] {
+      display: none;
+    }
+
+    audio {
+      display: block;
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .status-list li {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfa;
+    }
+
+    .status-list li.active {
+      border-color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .status-list li.done {
+      border-color: #9cc9b8;
+    }
+
+    .status-list li.warning {
+      border-color: #e1bd75;
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .status-list li.error {
+      border-color: #d28a8e;
+      background: #fff5f5;
+      color: var(--red);
+    }
+
+    .status-list strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .status-list span,
+    .chunk-preview {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .status-list li.error span,
+    .status-list li.warning span {
+      color: inherit;
+    }
+
+    .chunk-preview {
+      margin: 8px 0 0;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 20px;
+      }
+
+      .layout,
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top-menu" aria-label="Main menu">
+      <a href="index.html">Home</a>
+      <a href="page1.html">Generate JSON</a>
+      <a href="page2.html">Download Video</a>
+      <a aria-current="page" href="page3.html">Generate Voice</a>
+    </nav>
+
+    <h1>French Voice Generator</h1>
+    <p class="lede">Paste the full French script. The page splits it into safe chunks, sends each chunk to Gemini speech, then merges the finished parts into one MP3.</p>
+
+    <div class="layout">
+      <section class="panel input-panel">
+        <div class="settings-grid">
+          <div>
+            <label for="voiceSelect">Voice</label>
+            <select id="voiceSelect">
+              <option value="Sulafat" selected>Sulafat - warm</option>
+              <option value="Achird">Achird - friendly</option>
+              <option value="Callirrhoe">Callirrhoe - easy-going</option>
+              <option value="Despina">Despina - smooth</option>
+              <option value="Aoede">Aoede - breezy</option>
+              <option value="Puck">Puck - upbeat</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="pacingSelect">Tempo</label>
+            <select id="pacingSelect">
+              <option value="slow_warm" selected>Slow, warm and natural</option>
+              <option value="natural">Natural conversation</option>
+              <option value="dynamic">Dynamic but not rushed</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="temperatureSelect">Temperature</label>
+            <select id="temperatureSelect">
+              <option value="0.6">Stable</option>
+              <option value="0.75" selected>Natural</option>
+              <option value="0.95">More expressive</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="chunkSizeSelect">Chunk length</label>
+            <select id="chunkSizeSelect">
+              <option value="170" selected>Safest - 170 words</option>
+              <option value="240">Balanced - 240 words</option>
+              <option value="320">Faster - 320 words</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="scriptInput">Script</label>
+        <textarea id="scriptInput" spellcheck="true" placeholder="Paste your French script here..."></textarea>
+
+        <div class="actions">
+          <button id="generateButton" type="button">Generate MP3</button>
+          <button id="stopButton" class="secondary" type="button" disabled>Stop</button>
+        </div>
+
+        <p id="message" class="message" aria-live="polite"></p>
+      </section>
+
+      <aside class="panel side-panel">
+        <section id="resultPanel" class="result-panel" hidden>
+          <h2>Final MP3</h2>
+          <audio id="finalAudio" controls></audio>
+          <a id="downloadLink" class="download-link" href="#" download>Download MP3</a>
+        </section>
+
+        <h2>Chunks</h2>
+        <ol id="statusList" class="status-list" aria-live="polite"></ol>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const API_URL = 'api.php';
+
+    const voiceSelect = document.getElementById('voiceSelect');
+    const pacingSelect = document.getElementById('pacingSelect');
+    const temperatureSelect = document.getElementById('temperatureSelect');
+    const chunkSizeSelect = document.getElementById('chunkSizeSelect');
+    const scriptInput = document.getElementById('scriptInput');
+    const generateButton = document.getElementById('generateButton');
+    const stopButton = document.getElementById('stopButton');
+    const message = document.getElementById('message');
+    const statusList = document.getElementById('statusList');
+    const resultPanel = document.getElementById('resultPanel');
+    const finalAudio = document.getElementById('finalAudio');
+    const downloadLink = document.getElementById('downloadLink');
+
+    let activeAbortController = null;
+
+    function normalizeText(text) {
+      return text
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    function countWords(text) {
+      return text.trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function splitIntoUnits(text) {
+      const paragraphs = normalizeText(text).split(/\n{2,}/).filter(Boolean);
+      const units = [];
+
+      paragraphs.forEach((paragraph) => {
+        const matches = paragraph.match(/[^.!?;:\u2026]+[.!?;:\u2026]+["')\]]*|[^.!?;:\u2026]+$/g) || [paragraph];
+        matches
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .forEach((value) => units.push(value));
+      });
+
+      return units;
+    }
+
+    function splitScript(text, maxWords) {
+      const units = splitIntoUnits(text);
+      const chunks = [];
+      let current = [];
+      let currentWords = 0;
+
+      function flushCurrent() {
+        if (current.length === 0) {
+          return;
+        }
+
+        chunks.push(current.join(' ').replace(/\s+/g, ' ').trim());
+        current = [];
+        currentWords = 0;
+      }
+
+      units.forEach((unit) => {
+        const unitWords = countWords(unit);
+
+        if (unitWords > maxWords) {
+          flushCurrent();
+          const words = unit.split(/\s+/).filter(Boolean);
+
+          for (let index = 0; index < words.length; index += maxWords) {
+            chunks.push(words.slice(index, index + maxWords).join(' '));
+          }
+
+          return;
+        }
+
+        if (currentWords > 0 && currentWords + unitWords > maxWords) {
+          flushCurrent();
+        }
+
+        current.push(unit);
+        currentWords += unitWords;
+      });
+
+      flushCurrent();
+      return chunks;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setMessage(text, isError = false) {
+      message.textContent = text;
+      message.classList.toggle('error', isError);
+    }
+
+    function createRunId() {
+      const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
+      const random = Math.random().toString(36).slice(2, 8);
+      return `${timestamp}_${random}`;
+    }
+
+    function formatDuration(seconds) {
+      if (!Number.isFinite(Number(seconds))) {
+        return '';
+      }
+
+      const totalSeconds = Math.round(Number(seconds));
+      const minutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = String(totalSeconds % 60).padStart(2, '0');
+      return `${minutes}:${remainingSeconds}`;
+    }
+
+    function previewText(text) {
+      return text.length > 190 ? `${text.slice(0, 190)}...` : text;
+    }
+
+    function resetStatus(chunks) {
+      statusList.innerHTML = '';
+
+      chunks.forEach((chunk, index) => {
+        const item = document.createElement('li');
+        const words = countWords(chunk);
+        item.id = `chunk-${index + 1}`;
+        item.innerHTML = `
+          <strong>Chunk ${index + 1}</strong>
+          <span>Queued: ${words} word${words === 1 ? '' : 's'}</span>
+          <p class="chunk-preview">${escapeHtml(previewText(chunk))}</p>
+        `;
+        statusList.appendChild(item);
+      });
+    }
+
+    function updateStatus(index, title, detail = '', state = '') {
+      const item = document.getElementById(`chunk-${index}`);
+      if (!item) {
+        return;
+      }
+
+      item.className = state;
+      item.innerHTML = `
+        <strong>Chunk ${index}</strong>
+        <span>${escapeHtml(title)}</span>
+        ${detail ? `<p class="chunk-preview">${escapeHtml(detail)}</p>` : ''}
+      `;
+    }
+
+    function setControlsRunning(isRunning) {
+      generateButton.disabled = isRunning;
+      stopButton.disabled = !isRunning;
+      voiceSelect.disabled = isRunning;
+      pacingSelect.disabled = isRunning;
+      temperatureSelect.disabled = isRunning;
+      chunkSizeSelect.disabled = isRunning;
+      scriptInput.disabled = isRunning;
+    }
+
+    async function postJson(payload, signal) {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        signal
+      });
+
+      let body;
+      try {
+        body = await response.json();
+      } catch (error) {
+        throw new Error('The server returned an invalid response.');
+      }
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error || 'The server returned an error.');
+      }
+
+      return body;
+    }
+
+    function updatePreviewMessage() {
+      const script = normalizeText(scriptInput.value);
+
+      if (!script) {
+        setMessage('');
+        statusList.innerHTML = '';
+        return;
+      }
+
+      const maxWords = Number(chunkSizeSelect.value);
+      const chunks = splitScript(script, maxWords);
+      const words = countWords(script);
+      setMessage(`${words} word${words === 1 ? '' : 's'} ready. This will generate ${chunks.length} audio chunk${chunks.length === 1 ? '' : 's'}.`);
+    }
+
+    async function generateVoice() {
+      const script = normalizeText(scriptInput.value);
+
+      if (!script) {
+        setMessage('Paste a script first.', true);
+        return;
+      }
+
+      const maxWords = Number(chunkSizeSelect.value);
+      const chunks = splitScript(script, maxWords);
+
+      if (chunks.length === 0) {
+        setMessage('The script could not be split into chunks.', true);
+        return;
+      }
+
+      const runId = createRunId();
+      const generatedFiles = [];
+      activeAbortController = new AbortController();
+      resultPanel.hidden = true;
+      finalAudio.removeAttribute('src');
+      downloadLink.removeAttribute('href');
+      resetStatus(chunks);
+      setControlsRunning(true);
+      setMessage(`Generating ${chunks.length} chunk${chunks.length === 1 ? '' : 's'}...`);
+
+      try {
+        for (let index = 0; index < chunks.length; index += 1) {
+          const chunkNumber = index + 1;
+          updateStatus(chunkNumber, 'Generating speech...', previewText(chunks[index]), 'active');
+
+          const result = await postJson({
+            action: 'tts_chunk',
+            runId,
+            chunkIndex: chunkNumber,
+            totalChunks: chunks.length,
+            text: chunks[index],
+            voice: voiceSelect.value,
+            pacing: pacingSelect.value,
+            temperature: Number(temperatureSelect.value)
+          }, activeAbortController.signal);
+
+          generatedFiles.push(result.path);
+          const duration = formatDuration(result.duration);
+          updateStatus(
+            chunkNumber,
+            duration ? `Saved ${result.path} (${duration})` : `Saved ${result.path}`,
+            '',
+            'done'
+          );
+        }
+
+        setMessage('Merging MP3 chunks...');
+        const finalResult = await postJson({
+          action: 'tts_merge',
+          runId,
+          files: generatedFiles
+        }, activeAbortController.signal);
+
+        const finalPath = `${finalResult.path}?v=${Date.now()}`;
+        finalAudio.src = finalPath;
+        downloadLink.href = finalPath;
+        downloadLink.download = finalResult.path.split('/').pop() || 'voice_final.mp3';
+        resultPanel.hidden = false;
+
+        const duration = formatDuration(finalResult.duration);
+        setMessage(duration ? `Done. Final MP3 is ${duration}.` : 'Done. Final MP3 is ready.');
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          setMessage('Generation stopped.');
+        } else {
+          setMessage(error.message, true);
+          const failedIndex = generatedFiles.length + 1;
+          updateStatus(failedIndex, error.message, '', 'error');
+        }
+      } finally {
+        activeAbortController = null;
+        setControlsRunning(false);
+      }
+    }
+
+    function stopGeneration() {
+      if (activeAbortController) {
+        activeAbortController.abort();
+      }
+    }
+
+    generateButton.addEventListener('click', generateVoice);
+    stopButton.addEventListener('click', stopGeneration);
+    scriptInput.addEventListener('input', updatePreviewMessage);
+    chunkSizeSelect.addEventListener('change', updatePreviewMessage);
+  </script>
+</body>
+</html>

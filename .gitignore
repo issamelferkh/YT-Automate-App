@@ -5,8 +5,10 @@
 # Runtime cache and downloaded/generated videos
 cache/
 videos/
+audio/
 
 # Large/generated media files
+*.mp3
 *.mp4
 *.mov
 *.m4v
@@ -18,3 +20,4 @@ videos/
 # Local environment files
 .env
 .env.*
+config.local.php
