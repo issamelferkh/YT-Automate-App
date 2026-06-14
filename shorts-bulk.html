@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TCF Canada Bulk Shorts</title>
+  <link rel="stylesheet" href="shorts.css">
+</head>
+<body>
+  <main>
+    <nav class="top-menu" aria-label="Main menu">
+      <a href="index.html">Home</a>
+      <a href="page1.html">Generate JSON</a>
+      <a href="page2.html">Download Video</a>
+      <a href="page3.html">Generate Voice</a>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a href="shorts-studio.html">Shorts Studio</a>
+      <a aria-current="page" href="shorts-bulk.html">Bulk Shorts</a>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">Production en masse</p>
+        <h1>Bulk Shorts TCF Canada</h1>
+        <p class="lede">Colle une liste de sujets TCF Canada et lance une file de production pour générer automatiquement scripts, voix Google AI, clips verticaux, sous-titres animés, titres, descriptions et hashtags SEO.</p>
+      </div>
+      <span class="pill gold">Queue massive</span>
+    </header>
+
+    <div class="bulk-layout">
+      <section class="panel panel-pad">
+        <h2>Paramètres de série</h2>
+
+        <div class="form-grid">
+          <div>
+            <label for="durationSelect">Durée cible</label>
+            <select id="durationSelect">
+              <option value="25">25 secondes</option>
+              <option value="35" selected>35 secondes</option>
+              <option value="45">45 secondes</option>
+              <option value="60">60 secondes</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="voiceSelect">Voix Google AI</label>
+            <select id="voiceSelect"></select>
+          </div>
+
+          <div>
+            <label for="pacingSelect">Tempo</label>
+            <select id="pacingSelect">
+              <option value="natural">Naturel</option>
+              <option value="dynamic" selected>Dynamique</option>
+              <option value="slow_warm">Plus lent et chaleureux</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="limitInput">Limite de cette session</label>
+            <input id="limitInput" type="number" min="1" max="500" value="25">
+          </div>
+        </div>
+
+        <label for="topicsInput">Sujets, un par ligne</label>
+        <textarea id="topicsInput" placeholder="Ex:
+001: Comment réussir le TCF Canada en 30 jours ?
+002: Le piège invisible qui fait perdre des points en Expression Écrite
+003: Si tu fais ça dans la Tâche 3, ton score peut chuter"></textarea>
+
+        <div class="actions">
+          <button id="prepareButton" type="button">Préparer la file</button>
+          <button id="startButton" class="blue" type="button" disabled>Lancer la production</button>
+          <button id="stopButton" class="secondary" type="button" disabled>Stop</button>
+        </div>
+
+        <p id="message" class="message" aria-live="polite"></p>
+      </section>
+
+      <section class="panel panel-pad">
+        <div class="section-title">
+          <h2>File de production</h2>
+          <button id="exportButton" class="secondary" type="button" disabled>Exporter SEO CSV</button>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <strong id="queuedCount">0</strong>
+            <span>Sujets</span>
+          </div>
+          <div class="metric">
+            <strong id="doneCount">0</strong>
+            <span>Vidéos prêtes</span>
+          </div>
+          <div class="metric">
+            <strong id="errorCount">0</strong>
+            <span>Erreurs</span>
+          </div>
+        </div>
+
+        <div class="job-table-wrap">
+          <table class="job-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Sujet</th>
+                <th>Statut</th>
+                <th>Vidéo</th>
+                <th>SEO</th>
+              </tr>
+            </thead>
+            <tbody id="jobTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="shorts-workflow.js"></script>
+  <script>
+    const durationSelect = document.getElementById('durationSelect');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const pacingSelect = document.getElementById('pacingSelect');
+    const limitInput = document.getElementById('limitInput');
+    const topicsInput = document.getElementById('topicsInput');
+    const prepareButton = document.getElementById('prepareButton');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const exportButton = document.getElementById('exportButton');
+    const message = document.getElementById('message');
+    const queuedCount = document.getElementById('queuedCount');
+    const doneCount = document.getElementById('doneCount');
+    const errorCount = document.getElementById('errorCount');
+    const jobTableBody = document.getElementById('jobTableBody');
+
+    let jobs = [];
+    let activeAbortController = null;
+    let isRunning = false;
+
+    populateShortsVoiceSelect(voiceSelect, 'Aoede');
+
+    function setMessage(text, isError = false) {
+      message.textContent = text;
+      message.classList.toggle('error', isError);
+    }
+
+    function getBaseSettings() {
+      return {
+        duration: Number(durationSelect.value),
+        audience: 'candidats au TCF Canada qui veulent immigrer, étudier ou travailler au Canada',
+        tone: 'clair, direct, chaleureux et orienté résultat',
+        platform: 'TikTok, Instagram Reels et YouTube Shorts',
+        voice: voiceSelect.value,
+        pacing: pacingSelect.value,
+        temperature: 0.75
+      };
+    }
+
+    function parseTopics() {
+      const limit = Math.max(1, Math.min(500, Number(limitInput.value || 25)));
+      return parseShortsTopicLines(topicsInput.value, limit);
+    }
+
+    function makeJob(topicEntry, index) {
+      return {
+        id: index + 1,
+        number: topicEntry.number,
+        topic: topicEntry.topic,
+        outputFileName: topicEntry.outputFileName,
+        status: 'queued',
+        detail: 'En attente',
+        plan: null,
+        audioPath: '',
+        videoPath: '',
+        seo: '',
+        error: ''
+      };
+    }
+
+    function prepareJobs() {
+      jobs = parseTopics().map(makeJob);
+      renderJobs();
+      setMessage(
+        jobs.length
+          ? `${jobs.length} sujet${jobs.length === 1 ? '' : 's'} prêt${jobs.length === 1 ? '' : 's'} dans la file.`
+          : 'Format attendu: 045: Le sujet de la vidéo',
+        jobs.length === 0
+      );
+      startButton.disabled = jobs.length === 0;
+      exportButton.disabled = true;
+    }
+
+    function updateMetrics() {
+      queuedCount.textContent = String(jobs.length);
+      doneCount.textContent = String(jobs.filter((job) => job.status === 'done').length);
+      errorCount.textContent = String(jobs.filter((job) => job.status === 'error').length);
+      exportButton.disabled = jobs.every((job) => !job.seo);
+    }
+
+    function renderJobs() {
+      jobTableBody.innerHTML = jobs.map((job) => {
+        const videoCell = job.videoPath
+          ? `<a href="${encodeURI(job.videoPath)}" download="${escapeShortsHtml(job.outputFileName)}">${escapeShortsHtml(job.outputFileName)}</a>`
+          : '';
+        const seoCell = job.plan ? `
+          <div class="seo-cell">
+            <button class="secondary compact copy-job-seo" type="button" data-job-id="${job.id}">Copier SEO</button>
+            <pre>${escapeShortsHtml(job.seo)}</pre>
+          </div>
+        ` : '';
+        return `
+          <tr id="job-${job.id}">
+            <td>${escapeShortsHtml(job.number)}</td>
+            <td>${escapeShortsHtml(job.topic)}</td>
+            <td><span class="pill ${job.status === 'active' ? 'blue' : job.status === 'error' ? 'gold' : ''}">${escapeShortsHtml(job.status)}</span><br><span class="muted">${escapeShortsHtml(job.detail)}</span></td>
+            <td>${videoCell}</td>
+            <td>${seoCell}</td>
+          </tr>
+        `;
+      }).join('');
+      updateMetrics();
+    }
+
+    function updateJob(job, updates) {
+      Object.assign(job, updates);
+      renderJobs();
+    }
+
+    function setRunning(running) {
+      isRunning = running;
+      prepareButton.disabled = running;
+      startButton.disabled = running || jobs.length === 0;
+      stopButton.disabled = !running;
+      topicsInput.disabled = running;
+      durationSelect.disabled = running;
+      voiceSelect.disabled = running;
+      pacingSelect.disabled = running;
+      limitInput.disabled = running;
+    }
+
+    async function runJob(job, index) {
+      const settings = {
+        ...getBaseSettings(),
+        topic: job.topic,
+        runId: createShortsRunId(`bulk_${job.number || index + 1}`),
+        outputFileName: job.outputFileName
+      };
+
+      const result = await createCompleteShortsVideo(settings, {
+        onStep(step, detail) {
+          updateJob(job, { status: 'active', detail });
+        },
+        onPlan(plan) {
+          updateJob(job, {
+            plan,
+            seo: getShortsSeoText(plan),
+            detail: 'Script et SEO prêts'
+          });
+        },
+        onVoice(voice) {
+          updateJob(job, {
+            audioPath: voice.path,
+            detail: `Voix prête ${formatShortsDuration(voice.duration)}`
+          });
+        },
+        onClips(clips) {
+          updateJob(job, {
+            detail: `${clips.length} clips verticaux prêts`
+          });
+        },
+        onVideo(video) {
+          updateJob(job, {
+            videoPath: video.path,
+            detail: `MP4 prêt ${formatShortsDuration(video.duration)}`
+          });
+        }
+      }, activeAbortController.signal);
+
+      updateJob(job, {
+        status: 'done',
+        detail: 'Vidéo prête',
+        plan: result.plan,
+        seo: getShortsSeoText(result.plan),
+        videoPath: result.video.path
+      });
+    }
+
+    async function startBulk() {
+      if (jobs.length === 0) {
+        prepareJobs();
+      }
+
+      if (jobs.length === 0) {
+        return;
+      }
+
+      activeAbortController = new AbortController();
+      setRunning(true);
+      setMessage(`Production en cours: ${jobs.length} vidéo${jobs.length === 1 ? '' : 's'} en séquence.`);
+
+      try {
+        for (let index = 0; index < jobs.length; index += 1) {
+          const job = jobs[index];
+          if (job.status === 'done') {
+            continue;
+          }
+
+          try {
+            await runJob(job, index);
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              throw error;
+            }
+
+            updateJob(job, {
+              status: 'error',
+              detail: 'Erreur',
+              error: error.message
+            });
+          }
+        }
+
+        setMessage('Production terminée.');
+      } catch (error) {
+        setMessage(error.name === 'AbortError' ? 'Production arrêtée.' : error.message, error.name !== 'AbortError');
+      } finally {
+        activeAbortController = null;
+        setRunning(false);
+      }
+    }
+
+    function exportSeoCsv() {
+      const rows = [
+        ['topic', 'video_path', 'title', 'description', 'hashtags']
+      ];
+
+      jobs.forEach((job) => {
+        const seo = job.plan && job.plan.seo ? job.plan.seo : {};
+        rows.push([
+          job.topic,
+          job.videoPath,
+          seo.title || '',
+          seo.description || '',
+          Array.isArray(seo.hashtags) ? seo.hashtags.join(' ') : ''
+        ]);
+      });
+
+      const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tcf-canada-shorts-seo-${Date.now()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    prepareButton.addEventListener('click', prepareJobs);
+    startButton.addEventListener('click', startBulk);
+    stopButton.addEventListener('click', () => {
+      if (activeAbortController) {
+        activeAbortController.abort();
+      }
+    });
+    exportButton.addEventListener('click', exportSeoCsv);
+    jobTableBody.addEventListener('click', async (event) => {
+      const button = event.target.closest('.copy-job-seo');
+      if (!button) {
+        return;
+      }
+
+      const job = jobs.find((item) => item.id === Number(button.dataset.jobId));
+
+      try {
+        await copyShortsText(job ? job.seo : '');
+        setMessage('SEO copié.');
+      } catch (error) {
+        setMessage(error.message, true);
+      }
+    });
+    topicsInput.addEventListener('input', () => {
+      if (!isRunning) {
+        startButton.disabled = parseTopics().length === 0;
+      }
+    });
+  </script>
+</body>
+</html>

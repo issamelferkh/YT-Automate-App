@@ -26,6 +26,10 @@
     }
 
     .top-menu a {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
       border: 1px solid #c9c9c3;
       border-radius: 6px;
       padding: 9px 12px;
@@ -33,6 +37,13 @@
       background: #fff;
       text-decoration: none;
       font-weight: 650;
+    }
+
+    .top-menu .nav-divider {
+      width: 1px;
+      min-height: 28px;
+      margin: 5px 2px;
+      background: #c9c9c3;
     }
 
     .top-menu a[aria-current="page"] {
@@ -91,6 +102,9 @@
       <a aria-current="page" href="page1.html">Generate JSON</a>
       <a href="page2.html">Download Video</a>
       <a href="page3.html">Generate Voice</a>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a href="shorts-studio.html">Shorts Studio</a>
+      <a href="shorts-bulk.html">Bulk Shorts</a>
     </nav>
 
     <h1>Script Segmentation</h1>

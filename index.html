@@ -67,6 +67,13 @@
       font-weight: 700;
     }
 
+    .nav-divider {
+      width: 1px;
+      min-height: 28px;
+      margin: 0 2px;
+      background: var(--line);
+    }
+
     nav a {
       border: 1px solid var(--line);
       color: var(--ink);
@@ -257,38 +264,42 @@
         <a href="page1.html">Generate JSON</a>
         <a href="page2.html">Download Video</a>
         <a href="page3.html">Generate Voice</a>
+        <span class="nav-divider" aria-hidden="true"></span>
+        <a href="shorts-studio.html">Shorts Studio</a>
+        <a href="shorts-bulk.html">Bulk Shorts</a>
       </nav>
     </header>
 
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Local video workflow</p>
-        <h1>Turn scripts into ordered stock video plans.</h1>
-        <p class="lede">Use the first page to generate clean 10-second JSON segments, the second page to download matching Pexels videos, and the voice page to turn a full French script into one merged MP3.</p>
+        <h1>Build YouTube videos and TCF Canada Shorts.</h1>
+        <p class="lede">Use the YouTube Automation tools for horizontal script segments, Pexels clips and Gemini voice. Use the Reels TikTok section to generate complete vertical TCF Canada videos with script, Google AI voice, animated subtitles and SEO metadata.</p>
         <div class="primary-actions">
           <a class="tool-link" href="page1.html">Generate JSON</a>
           <a class="tool-link secondary" href="page2.html">Download Video</a>
           <a class="tool-link secondary" href="page3.html">Generate Voice</a>
+          <a class="tool-link secondary" href="shorts-studio.html">Shorts Studio</a>
         </div>
       </div>
 
       <aside class="workflow-panel" aria-label="Workflow preview">
         <div class="flow-visual">
           <div class="flow-item">
-            <strong>1. Paste script text</strong>
-            <span>Deterministic 10-second segment JSON.</span>
+            <strong>1. YT Automation</strong>
+            <span>Segment long scripts, download landscape clips and generate French voice.</span>
           </div>
           <div class="flow-item">
-            <strong>2. Add search queries</strong>
-            <span>Manual query fields keep the video search predictable.</span>
+            <strong>2. Shorts Studio</strong>
+            <span>Create one TCF Canada Reel from topic to final 9:16 MP4.</span>
           </div>
           <div class="flow-item">
-            <strong>3. Download clips</strong>
-            <span>Videos save locally as ordered segment files.</span>
+            <strong>3. Bulk Shorts</strong>
+            <span>Queue large batches of TCF Canada topics for SEO content production.</span>
           </div>
           <div class="flow-item">
-            <strong>4. Generate voice</strong>
-            <span>French narration saves as one merged MP3.</span>
+            <strong>4. Local outputs</strong>
+            <span>MP3 files save in audio/, horizontal clips in videos/, vertical shorts in shorts/.</span>
           </div>
         </div>
         <pre class="flow-code">[
@@ -322,6 +333,20 @@
         <h2>Generate Voice</h2>
         <p>Paste a French script, generate short Gemini TTS chunks, and merge them into one MP3.</p>
         <a class="tool-link" href="page3.html">Open Voice Tool</a>
+      </article>
+
+      <article class="tool-card">
+        <span class="badge gold">Reels TikTok</span>
+        <h2>Shorts Studio</h2>
+        <p>Generate one complete TCF Canada vertical video with script, voice, clips, subtitles and SEO.</p>
+        <a class="tool-link" href="shorts-studio.html">Open Studio</a>
+      </article>
+
+      <article class="tool-card">
+        <span class="badge">Bulk</span>
+        <h2>Bulk Shorts</h2>
+        <p>Process a large list of TCF Canada topics into optimized TikTok, Reels and YouTube Shorts.</p>
+        <a class="tool-link" href="shorts-bulk.html">Open Bulk Queue</a>
       </article>
     </section>
   </main>

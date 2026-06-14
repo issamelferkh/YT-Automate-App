@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TCF Canada Shorts Studio</title>
+  <link rel="stylesheet" href="shorts.css">
+</head>
+<body>
+  <main>
+    <nav class="top-menu" aria-label="Main menu">
+      <a href="index.html">Home</a>
+      <a href="page1.html">Generate JSON</a>
+      <a href="page2.html">Download Video</a>
+      <a href="page3.html">Generate Voice</a>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a aria-current="page" href="shorts-studio.html">Shorts Studio</a>
+      <a href="shorts-bulk.html">Bulk Shorts</a>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">Reels TikTok YouTube Shorts</p>
+        <h1>TCF Canada Shorts Studio</h1>
+        <p class="lede">Génère un script TCF Canada, une voix Google AI, des vidéos verticales 9:16, des sous-titres animés synchronisés et les métadonnées SEO pour TikTok, Instagram Reels et YouTube Shorts.</p>
+      </div>
+      <span class="pill">9:16 vertical</span>
+    </header>
+
+    <div class="layout">
+      <section class="panel panel-pad">
+        <div class="section-title">
+          <h2>Brief contenu</h2>
+          <span class="pill blue">TCF Canada</span>
+        </div>
+
+        <div class="form-grid full">
+          <div>
+            <label for="topicInput">Sujet</label>
+            <input id="topicInput" value="Les erreurs fréquentes en expression orale TCF Canada" placeholder="Ex: Comment réussir la tâche 2 expression orale">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="durationSelect">Durée cible</label>
+            <select id="durationSelect">
+              <option value="25">25 secondes</option>
+              <option value="35" selected>35 secondes</option>
+              <option value="45">45 secondes</option>
+              <option value="60">60 secondes</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="voiceSelect">Voix Google AI</label>
+            <select id="voiceSelect"></select>
+          </div>
+
+          <div>
+            <label for="pacingSelect">Tempo</label>
+            <select id="pacingSelect">
+              <option value="natural">Naturel</option>
+              <option value="dynamic" selected>Dynamique</option>
+              <option value="slow_warm">Plus lent et chaleureux</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="temperatureSelect">Expressivité</label>
+            <select id="temperatureSelect">
+              <option value="0.6">Stable</option>
+              <option value="0.75" selected>Naturelle</option>
+              <option value="0.95">Plus expressive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="generatePlanButton" type="button">Générer script + SEO</button>
+          <button id="generateAllButton" class="blue" type="button">Créer la vidéo complète</button>
+          <button id="stopButton" class="secondary" type="button" disabled>Stop</button>
+        </div>
+
+        <p id="message" class="message" aria-live="polite"></p>
+      </section>
+
+      <section class="panel panel-pad">
+        <div class="section-title">
+          <h2>Script et SEO</h2>
+          <button id="copySeoButton" class="secondary" type="button" disabled>Copier SEO</button>
+        </div>
+
+        <label for="scriptOutput">Script voix off</label>
+        <textarea id="scriptOutput" spellcheck="true" placeholder="Le script généré apparaîtra ici. Tu peux l'ajuster avant de créer la vidéo complète."></textarea>
+
+        <div class="seo-box">
+          <label for="seoOutput">Titres, description et hashtags SEO</label>
+          <pre id="seoOutput" aria-live="polite"></pre>
+        </div>
+      </section>
+
+      <aside class="panel panel-pad">
+        <h2>Sortie finale</h2>
+        <div class="phone-preview">
+          <div class="phone-screen">
+            <video id="videoPreview" controls playsinline hidden></video>
+            <div id="emptyPreview" class="phone-empty">La vidéo finale 9:16 apparaîtra ici.</div>
+          </div>
+        </div>
+
+        <audio id="audioPreview" controls hidden></audio>
+
+        <div class="actions">
+          <a id="downloadVideoLink" class="button-link" href="#" download hidden>Télécharger MP4</a>
+          <a id="downloadAudioLink" class="button-link secondary" href="#" download hidden>Télécharger MP3</a>
+        </div>
+
+        <h3>Progression</h3>
+        <ol id="statusList" class="status-list" aria-live="polite"></ol>
+      </aside>
+    </div>
+  </main>
+
+  <script src="shorts-workflow.js"></script>
+  <script>
+    const topicInput = document.getElementById('topicInput');
+    const durationSelect = document.getElementById('durationSelect');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const pacingSelect = document.getElementById('pacingSelect');
+    const temperatureSelect = document.getElementById('temperatureSelect');
+    const generatePlanButton = document.getElementById('generatePlanButton');
+    const generateAllButton = document.getElementById('generateAllButton');
+    const stopButton = document.getElementById('stopButton');
+    const copySeoButton = document.getElementById('copySeoButton');
+    const scriptOutput = document.getElementById('scriptOutput');
+    const seoOutput = document.getElementById('seoOutput');
+    const message = document.getElementById('message');
+    const statusList = document.getElementById('statusList');
+    const videoPreview = document.getElementById('videoPreview');
+    const emptyPreview = document.getElementById('emptyPreview');
+    const audioPreview = document.getElementById('audioPreview');
+    const downloadVideoLink = document.getElementById('downloadVideoLink');
+    const downloadAudioLink = document.getElementById('downloadAudioLink');
+
+    let activeAbortController = null;
+    let currentPlan = null;
+
+    populateShortsVoiceSelect(voiceSelect, 'Aoede');
+
+    function getSettings() {
+      return {
+        topic: normalizeShortsText(topicInput.value),
+        duration: Number(durationSelect.value),
+        audience: 'candidats au TCF Canada qui veulent immigrer, étudier ou travailler au Canada',
+        tone: 'clair, direct, chaleureux et orienté résultat',
+        platform: 'TikTok, Instagram Reels et YouTube Shorts',
+        voice: voiceSelect.value,
+        pacing: pacingSelect.value,
+        temperature: Number(temperatureSelect.value)
+      };
+    }
+
+    function setMessage(text, isError = false) {
+      message.textContent = text;
+      message.classList.toggle('error', isError);
+    }
+
+    function setRunning(isRunning) {
+      activeAbortController = isRunning ? activeAbortController : null;
+      generatePlanButton.disabled = isRunning;
+      generateAllButton.disabled = isRunning;
+      stopButton.disabled = !isRunning;
+      topicInput.disabled = isRunning;
+      durationSelect.disabled = isRunning;
+      voiceSelect.disabled = isRunning;
+      pacingSelect.disabled = isRunning;
+      temperatureSelect.disabled = isRunning;
+      scriptOutput.disabled = isRunning;
+    }
+
+    function resetOutputs() {
+      statusList.innerHTML = '';
+      videoPreview.hidden = true;
+      videoPreview.removeAttribute('src');
+      emptyPreview.hidden = false;
+      audioPreview.hidden = true;
+      audioPreview.removeAttribute('src');
+      downloadVideoLink.hidden = true;
+      downloadAudioLink.hidden = true;
+    }
+
+    function addStatus(id, title, detail = '', state = '') {
+      let item = document.getElementById(`status-${id}`);
+      if (!item) {
+        item = document.createElement('li');
+        item.id = `status-${id}`;
+        statusList.appendChild(item);
+      }
+
+      item.className = state;
+      item.innerHTML = `
+        <strong>${escapeShortsHtml(title)}</strong>
+        <span>${escapeShortsHtml(detail)}</span>
+      `;
+    }
+
+    function renderPlan(plan) {
+      currentPlan = plan;
+      scriptOutput.value = plan.script || '';
+      seoOutput.textContent = getShortsSeoText(plan);
+      copySeoButton.disabled = !seoOutput.textContent;
+      addStatus('plan', 'Script + SEO prêts', `${plan.segments.length} segments, ${plan.subtitles.length} sous-titres`, 'done');
+    }
+
+    async function handleGeneratePlan() {
+      const settings = getSettings();
+      if (!settings.topic) {
+        setMessage('Ajoute un sujet TCF Canada.', true);
+        return;
+      }
+
+      activeAbortController = new AbortController();
+      resetOutputs();
+      setRunning(true);
+      setMessage('Génération du script, des sous-titres et du SEO...');
+      addStatus('plan', 'Plan Gemini', 'En cours...', 'active');
+
+      try {
+        const plan = await generateShortsPlan(settings, activeAbortController.signal);
+        renderPlan(plan);
+        setMessage('Script, sous-titres et SEO générés.');
+      } catch (error) {
+        setMessage(error.name === 'AbortError' ? 'Génération arrêtée.' : error.message, error.name !== 'AbortError');
+        addStatus('plan', error.message, '', 'error');
+      } finally {
+        setRunning(false);
+      }
+    }
+
+    function getPlanForVideo(settings) {
+      if (!currentPlan) {
+        return null;
+      }
+
+      return {
+        ...currentPlan,
+        script: normalizeShortsText(scriptOutput.value) || currentPlan.script,
+        seo: currentPlan.seo || {
+          title: `TCF Canada: ${settings.topic}`,
+          description: 'Préparez votre TCF Canada avec tcf-canada.net.',
+          hashtags: ['#TCFCanada', '#PreparationTCF']
+        }
+      };
+    }
+
+    async function handleGenerateAll() {
+      const settings = getSettings();
+      if (!settings.topic) {
+        setMessage('Ajoute un sujet TCF Canada.', true);
+        return;
+      }
+
+      activeAbortController = new AbortController();
+      resetOutputs();
+      setRunning(true);
+      setMessage('Création de la vidéo complète...');
+
+      try {
+        const result = await createCompleteShortsVideo({
+          ...settings,
+          plan: getPlanForVideo(settings)
+        }, {
+          onStep(step, detail) {
+            addStatus(step, detail, '', step === 'done' ? 'done' : 'active');
+            setMessage(detail);
+          },
+          onPlan(plan) {
+            renderPlan(plan);
+          },
+          onVoiceChunk(event) {
+            const duration = event.duration ? ` (${formatShortsDuration(event.duration)})` : '';
+            addStatus(
+              `voice-${event.chunkNumber}`,
+              `Voix ${event.chunkNumber}/${event.totalChunks}`,
+              event.path ? `MP3 prêt ${event.path}${duration}` : previewShortsText(event.text),
+              event.state
+            );
+          },
+          onVoice(voice) {
+            const audioPath = `${voice.path}?v=${Date.now()}`;
+            audioPreview.src = audioPath;
+            audioPreview.hidden = false;
+            downloadAudioLink.href = audioPath;
+            downloadAudioLink.download = voice.path.split('/').pop() || 'voice.mp3';
+            downloadAudioLink.hidden = false;
+            addStatus('voice', `Voix finale prête ${formatShortsDuration(voice.duration)}`, voice.path, 'done');
+          },
+          onClip(event) {
+            addStatus(
+              `clip-${event.segmentNumber}`,
+              `Clip vertical ${event.segmentNumber}`,
+              event.path || event.detail,
+              event.state
+            );
+          },
+          onClips(clips) {
+            addStatus('clips', `${clips.length} clips verticaux prêts`, 'Format 1080x1920 H.264 CFR', 'done');
+          },
+          onVideo(video) {
+            const videoPath = `${video.path}?v=${Date.now()}`;
+            videoPreview.src = videoPath;
+            videoPreview.hidden = false;
+            emptyPreview.hidden = true;
+            downloadVideoLink.href = videoPath;
+            downloadVideoLink.download = video.path.split('/').pop() || 'tcf-canada-short.mp4';
+            downloadVideoLink.hidden = false;
+            addStatus('render', `Vidéo prête ${formatShortsDuration(video.duration)}`, video.path, 'done');
+          }
+        }, activeAbortController.signal);
+
+        currentPlan = result.plan;
+        setMessage('Vidéo verticale prête avec voix, sous-titres animés et SEO.');
+      } catch (error) {
+        setMessage(error.name === 'AbortError' ? 'Création arrêtée.' : error.message, error.name !== 'AbortError');
+        addStatus('error', error.message, '', 'error');
+      } finally {
+        setRunning(false);
+      }
+    }
+
+    async function copySeo() {
+      try {
+        await copyShortsText(seoOutput.textContent);
+        setMessage('SEO copié.');
+      } catch (error) {
+        setMessage(error.message, true);
+      }
+    }
+
+    stopButton.addEventListener('click', () => {
+      if (activeAbortController) {
+        activeAbortController.abort();
+      }
+    });
+    generatePlanButton.addEventListener('click', handleGeneratePlan);
+    generateAllButton.addEventListener('click', handleGenerateAll);
+    copySeoButton.addEventListener('click', copySeo);
+  </script>
+</body>
+</html>

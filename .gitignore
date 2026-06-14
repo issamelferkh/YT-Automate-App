@@ -6,6 +6,7 @@
 cache/
 videos/
 audio/
+shorts/
 
 # Large/generated media files
 *.mp3
